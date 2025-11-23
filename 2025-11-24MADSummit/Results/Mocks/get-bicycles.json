@@ -1,0 +1,75 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPathPattern": "/v1/bicycles",
+    "headers": {
+      "x-api-version": {
+        "equalTo": "1.0.0"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "bicycles": [
+        {
+          "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+          "model": "City Bike Pro 2025",
+          "serialNumber": "BIKE-2025-001234",
+          "description": "Blue city bike with basket and lights",
+          "status": "IN_RACK",
+          "currentLocation": "Rack-Downtown-A",
+          "gpsData": {
+            "latitude": 48.1351,
+            "longitude": 11.5820,
+            "altitude": 520.5,
+            "accuracy": 5.2,
+            "timestamp": "2025-10-06T15:30:00Z"
+          },
+          "assignedMechanic": "9f8e7d6c-5b4a-3c2d-1e0f-9a8b7c6d5e4f",
+          "createdAt": "2025-10-06T13:24:00Z",
+          "updatedAt": "2025-10-06T15:30:00Z"
+        },
+        {
+          "id": "b2c3d4e5-f6a7-5b8c-9d0e-1f2a3b4c5d6e",
+          "model": "Mountain Explorer X1",
+          "serialNumber": "MTB-X1-987654",
+          "description": "Red mountain bike for off-road adventures",
+          "status": "IN_HOTEL",
+          "currentLocation": "Grand Hotel Munich",
+          "gpsData": {
+            "latitude": 48.1371,
+            "longitude": 11.5754,
+            "altitude": 518.0,
+            "accuracy": 4.8,
+            "timestamp": "2025-10-06T14:20:00Z"
+          },
+          "assignedMechanic": "8e7d6c5b-4a3c-2d1e-0f9a-8b7c6d5e4f3a",
+          "createdAt": "2025-10-05T09:15:00Z",
+          "updatedAt": "2025-10-06T14:20:00Z"
+        },
+        {
+          "id": "c3d4e5f6-a7b8-6c9d-0e1f-2a3b4c5d6e7f",
+          "model": "City Bike Pro 2025",
+          "serialNumber": "BIKE-2025-001235",
+          "description": "Green city bike with basket",
+          "status": "IN_GARAGE",
+          "currentLocation": "Garage-Central",
+          "gpsData": {
+            "latitude": 48.1401,
+            "longitude": 11.5650,
+            "altitude": 525.0,
+            "accuracy": 6.1,
+            "timestamp": "2025-10-06T08:00:00Z"
+          },
+          "createdAt": "2025-10-04T11:30:00Z",
+          "updatedAt": "2025-10-06T08:00:00Z"
+        }
+      ],
+      "totalCount": 3
+    }
+  }
+}

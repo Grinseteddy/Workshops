@@ -1,0 +1,33 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/v1/bicycles",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
+      "x-api-version": {
+        "equalTo": "1.0.0"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$.model"
+      },
+      {
+        "matchesJsonPath": "$.serialNumber"
+      }
+    ]
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "Content-Type": "application/json",
+      "Location": "https://rent-a-bike.com/v1/bicycles/d4e5f6a7-b8c9-7d0e-1f2a-3b4c5d6e7f8a"
+    },
+    "jsonBody": {
+      "bicycleLink": "https://rent-a-bike.com/v1/bicycles/d4e5f6a7-b8c9-7d0e-1f2a-3b4c5d6e7f8a",
+      "bicycleId": "d4e5f6a7-b8c9-7d0e-1f2a-3b4c5d6e7f8a"
+    }
+  }
+}
