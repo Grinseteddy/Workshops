@@ -1,0 +1,347 @@
+asyncapi: 3.0.0
+info:
+  title: Bicycle Distribution
+  version: 1.0.0
+  description: |
+    Events consumed by the Bicycle Distribution service.
+    The service consumes the following domain events:
+      - Bicycle Picked
+    
+    This service is responsible for the distribution of bicycles to racks and hotels,
+    and handles core functions including bringing of bicycles, pickup and return, 
+    and pick up by mechanics.
+  contact:
+    name: Annegret
+    url: https://rent-a-bike.com
+    email: annegret@rent-a-bike.com
+  x-api-id: a8b2c4d6-3e1f-4a2b-9c7d-5e8f9a0b1c2d
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  tags:
+    - name: Bicycle Management
+      description: All events related to bicycle operations
+    - name: Distribution
+      description: Events consumed by the Distribution bounded context
+
+servers:
+  event-broker-bike-rental:
+    host: rent-a-bike.com:9092
+    protocol: kafka
+    description: Event broker for the bike rental system
+    security:
+      - $ref: '#/components/securitySchemes/user-password'
+    bindings:
+      kafka:
+        schemaRegistryUrl: 'https://rent-a-bike-schema-registry.com'
+        schemaRegistryVendor: 'confluent'
+        bindingVersion: '0.5.0'
+
+channels:
+  BicyclePickedChannel:
+    description: Channel where messages are stored when a bicycle was picked up
+    address: bicycle-picked
+    messages:
+      BicyclePickedEvent:
+        $ref: '#/components/messages/BicyclePickedReceive'
+    bindings:
+      kafka:
+        topic: 'bicycle-picked-event-channel'
+        bindingVersion: '0.5.0'
+
+operations:
+  BicyclePickedReceiveOperation:
+    description: Event which is received by the Distribution bounded context when a bicycle was picked up
+    action: "receive"
+    channel:
+      $ref: "#/channels/BicyclePickedChannel"
+    bindings:
+      kafka:
+        bindingVersion: '0.5.0'
+        groupId:
+          type: string
+          pattern: ^cg-bicycle-picked-.*$
+
+components:
+  messages:
+    BicyclePickedReceive:
+      headers:
+        $ref: '#/components/schemas/MessageHeader'
+      payload:
+        $ref: '#/components/schemas/Bicycle'
+
+  schemas:
+    Bicycle:
+      description: Bicycle entity with location and status information
+      type: object
+      required:
+        - bicycleId
+        - status
+      properties:
+        bicycleId:
+          description: Unique identifier of the bicycle
+          type: string
+          format: uuid
+          examples:
+            - 3f7a8b2c-4d5e-6f1a-2b3c-4d5e6f7a8b9c
+        slot:
+          $ref: '#/components/schemas/Slot'
+        rack:
+          $ref: '#/components/schemas/Rack'
+        gpsData:
+          $ref: '#/components/schemas/GPSData'
+        status:
+          $ref: '#/components/schemas/Status'
+        hotel:
+          $ref: '#/components/schemas/Hotel'
+        model:
+          description: Model or type of the bicycle
+          type: string
+          minLength: 2
+          maxLength: 100
+          examples:
+            - City Bike Premium
+            - Mountain Bike Pro
+        serialNumber:
+          description: Serial number of the bicycle
+          type: string
+          minLength: 5
+          maxLength: 50
+          examples:
+            - BK-2024-001234
+
+    Slot:
+      description: Specific slot position where a bicycle is stored
+      type: object
+      required:
+        - slotId
+      properties:
+        slotId:
+          description: Unique identifier of the slot
+          type: string
+          format: uuid
+          examples:
+            - 1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        slotNumber:
+          description: Physical slot number
+          type: integer
+          minimum: 1
+          maximum: 999
+          examples:
+            - 42
+            - 105
+        isOccupied:
+          description: Whether the slot is currently occupied
+          type: boolean
+          default: false
+          examples:
+            - true
+            - false
+
+    Rack:
+      description: Rack or station where bicycles are stored
+      type: object
+      required:
+        - rackId
+        - location
+      properties:
+        rackId:
+          description: Unique identifier of the rack
+          type: string
+          format: uuid
+          examples:
+            - 9d8c7b6a-5e4f-3a2b-1c0d-9e8f7a6b5c4d
+        location:
+          description: Physical location or address of the rack
+          type: string
+          minLength: 5
+          maxLength: 200
+          examples:
+            - Central Station, Platform 3
+            - Market Square, North Side
+        capacity:
+          description: Total number of slots in the rack
+          type: integer
+          minimum: 1
+          maximum: 100
+          examples:
+            - 20
+            - 50
+        availableSlots:
+          description: Number of currently available slots
+          type: integer
+          minimum: 0
+          examples:
+            - 15
+            - 32
+
+    GPSData:
+      description: GPS coordinates of the bicycle
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          description: Latitude coordinate
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          examples:
+            - 52.5200
+            - 48.8566
+        longitude:
+          description: Longitude coordinate
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          examples:
+            - 13.4050
+            - 2.3522
+        altitude:
+          description: Altitude in meters
+          type: number
+          format: double
+          examples:
+            - 34.5
+            - 115.2
+        timestamp:
+          description: Timestamp when GPS data was recorded
+          type: string
+          format: date-time
+          examples:
+            - '2024-11-23T10:30:00Z'
+        accuracy:
+          description: GPS accuracy in meters
+          type: number
+          format: double
+          minimum: 0
+          examples:
+            - 5.0
+            - 12.5
+
+    Status:
+      description: Current status of the bicycle
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          description: Status value indicating if the bicycle is locked or unlocked
+          type: string
+          enum:
+            - LOCKED
+            - UNLOCKED
+          examples:
+            - LOCKED
+            - UNLOCKED
+        lastUpdated:
+          description: Timestamp when status was last updated
+          type: string
+          format: date-time
+          examples:
+            - '2024-11-23T10:30:00Z'
+        updatedBy:
+          description: User or system that updated the status
+          type: string
+          minLength: 2
+          maxLength: 100
+          examples:
+            - user-12345
+            - mechanic-service
+
+    Hotel:
+      description: Hotel where the bicycle might be delivered or picked up
+      type: object
+      required:
+        - hotelId
+        - name
+      properties:
+        hotelId:
+          description: Unique identifier of the hotel
+          type: string
+          format: uuid
+          examples:
+            - 7f6e5d4c-3b2a-1c0d-9e8f-7a6b5c4d3e2f
+        name:
+          description: Name of the hotel
+          type: string
+          minLength: 2
+          maxLength: 200
+          examples:
+            - Grand Hotel Central
+            - Riverside Inn
+        address:
+          description: Full address of the hotel
+          type: string
+          minLength: 5
+          maxLength: 300
+          examples:
+            - 123 Main Street, Downtown, 10001
+            - 456 Riverside Avenue, Suite 100
+        contactPerson:
+          description: Contact person at the hotel
+          type: string
+          minLength: 2
+          maxLength: 100
+          examples:
+            - John Smith
+            - Maria Garcia
+
+    MessageHeader:
+      description: Header information for each message
+      type: object
+      required:
+        - correlationId
+        - messageId
+        - x-api-identifier
+        - x-api-version
+      properties:
+        correlationId:
+          description: Identifier to be set by application to trace end-to-end-api-journey
+          type: string
+          format: uuid
+          examples:
+            - c4d3e2f1-5a6b-7c8d-9e0f-1a2b3c4d5e6f
+        messageId:
+          description: Identifier for the particular message, is needed in case of cascading infrastructure
+          type: string
+          format: uuid
+          examples:
+            - 2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e
+        x-api-identifier:
+          description: Identifier of the API used to create the message
+          type: string
+          format: uuid
+          default: a8b2c4d6-3e1f-4a2b-9c7d-5e8f9a0b1c2d
+          examples:
+            - a8b2c4d6-3e1f-4a2b-9c7d-5e8f9a0b1c2d
+        x-api-version:
+          description: Version of the API
+          type: string
+          x-extensible-enum:
+            - 1.0.0
+          default: 1.0.0
+          examples:
+            - 1.0.0
+        source:
+          description: Application name creating the message
+          type: string
+          minLength: 2
+          maxLength: 20
+          examples:
+            - BicycleTracking
+            - RentalService
+        timestamp:
+          description: Timestamp when the message was created
+          type: string
+          format: date-time
+          examples:
+            - '2024-11-23T10:30:00Z'
+
+  securitySchemes:
+    user-password:
+      type: userPassword
+      description: Security scheme for events using username and password authentication
