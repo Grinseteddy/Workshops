@@ -58,41 +58,30 @@ WireMock is a flexible library for stubbing and mocking web services. These mapp
 
 ### Option 1: Using WireMock Standalone
 
+**Run from the `wiremock` directory** (where this README is located):
+
 1. Download WireMock standalone JAR:
    ```bash
    curl -o wiremock-standalone.jar https://repo1.maven.org/maven2/org/wiremock/wiremock-standalone/3.3.1/wiremock-standalone-3.3.1.jar
    ```
 
-2. Create directory structure:
+2. Start WireMock:
    ```bash
-   mkdir -p wiremock/mappings
+   java -jar wiremock-standalone.jar --port 8080 --global-response-templating
    ```
 
-3. Copy all JSON files to the mappings directory:
-   ```bash
-   cp *.json wiremock/mappings/
-   ```
-
-4. Start WireMock:
-   ```bash
-   java -jar wiremock-standalone.jar --port 8080 --root-dir wiremock
-   ```
+   Note: WireMock automatically uses the `mappings/` subdirectory in the current directory.
 
 ### Option 2: Using Docker
 
-1. Create directory structure:
-   ```bash
-   mkdir -p wiremock/mappings
-   cp *.json wiremock/mappings/
-   ```
+**Run from the `wiremock` directory** (where this README is located):
 
-2. Run WireMock in Docker:
-   ```bash
-   docker run -it --rm \
-     -p 8080:8080 \
-     -v $PWD/wiremock:/home/wiremock \
-     wiremock/wiremock:3.3.1
-   ```
+```bash
+docker run -it --rm \
+  -p 8080:8080 \
+  -v $PWD:/home/wiremock \
+  wiremock/wiremock:3.3.1
+```
 
 ### Option 3: Using WireMock in Spring Boot Test
 
