@@ -1,0 +1,26 @@
+{
+  "priority": 10,
+  "request": {
+    "method": "ANY",
+    "urlPathPattern": "/v1/.*",
+    "headers": {
+      "Authorization": {
+        "absent": true
+      }
+    }
+  },
+  "response": {
+    "status": 401,
+    "headers": {
+      "Content-Type": "application/json",
+      "WWW-Authenticate": "Bearer realm=\"rent-a-bike\""
+    },
+    "jsonBody": {
+      "code": "BIKE-401",
+      "message": "Authentication required. Please provide valid credentials.",
+      "severity": "ERROR",
+      "timestamp": "{{now format='yyyy-MM-dd'T'HH:mm:ss'Z'}}"
+    },
+    "transformers": ["response-template"]
+  }
+}

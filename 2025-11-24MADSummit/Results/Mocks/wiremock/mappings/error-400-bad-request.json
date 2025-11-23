@@ -1,0 +1,25 @@
+{
+  "priority": 10,
+  "request": {
+    "method": "POST",
+    "urlPath": "/v1/bicycles",
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$[?(!@.model)]"
+      }
+    ]
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "code": "BIKE-400",
+      "message": "Invalid request: required field 'model' is missing",
+      "severity": "ERROR",
+      "timestamp": "{{now format='yyyy-MM-dd'T'HH:mm:ss'Z'}}"
+    },
+    "transformers": ["response-template"]
+  }
+}

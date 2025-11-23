@@ -1,0 +1,21 @@
+{
+  "priority": 10,
+  "request": {
+    "method": "GET",
+    "urlPath": "/v1/bicycles/00000000-0000-0000-0000-000000000000"
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "code": "BIKE-404",
+      "message": "Bicycle with ID 00000000-0000-0000-0000-000000000000 cannot be found",
+      "detail": "https://rent-a-bike.com/v1/bicycles/00000000-0000-0000-0000-000000000000",
+      "severity": "ERROR",
+      "timestamp": "{{now format='yyyy-MM-dd'T'HH:mm:ss'Z'}}"
+    },
+    "transformers": ["response-template"]
+  }
+}

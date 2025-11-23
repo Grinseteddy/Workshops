@@ -1,26 +1,12 @@
 {
   "request": {
-    "method": "PUT",
+    "method": "GET",
     "urlPathPattern": "/v1/bicycles/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}",
     "headers": {
-      "Content-Type": {
-        "equalTo": "application/json"
-      },
       "x-api-version": {
         "equalTo": "1.0.0"
       }
-    },
-    "bodyPatterns": [
-      {
-        "matchesJsonPath": "$.id"
-      },
-      {
-        "matchesJsonPath": "$.model"
-      },
-      {
-        "matchesJsonPath": "$.serialNumber"
-      }
-    ]
+    }
   },
   "response": {
     "status": 200,
@@ -29,11 +15,11 @@
     },
     "jsonBody": {
       "id": "{{request.pathSegments.[2]}}",
-      "model": "{{jsonPath request.body '$.model'}}",
-      "serialNumber": "{{jsonPath request.body '$.serialNumber'}}",
-      "description": "{{jsonPath request.body '$.description'}}",
-      "status": "{{jsonPath request.body '$.status'}}",
-      "currentLocation": "{{jsonPath request.body '$.currentLocation'}}",
+      "model": "City Bike Pro 2025",
+      "serialNumber": "BIKE-2025-001234",
+      "description": "Blue city bike with basket and lights",
+      "status": "IN_RACK",
+      "currentLocation": "Rack-Downtown-A",
       "gpsData": {
         "latitude": 48.1351,
         "longitude": 11.5820,
@@ -43,7 +29,7 @@
       },
       "assignedMechanic": "9f8e7d6c-5b4a-3c2d-1e0f-9a8b7c6d5e4f",
       "createdAt": "2025-10-06T13:24:00Z",
-      "updatedAt": "{{now format='yyyy-MM-dd'T'HH:mm:ss'Z'}}"
+      "updatedAt": "2025-10-06T15:30:00Z"
     },
     "transformers": ["response-template"]
   }

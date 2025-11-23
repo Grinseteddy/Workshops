@@ -1,12 +1,20 @@
 {
   "request": {
-    "method": "GET",
+    "method": "PUT",
     "urlPathPattern": "/v1/bicycles/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/status",
     "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
       "x-api-version": {
         "equalTo": "1.0.0"
       }
-    }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$.status"
+      }
+    ]
   },
   "response": {
     "status": 200,
@@ -15,8 +23,8 @@
     },
     "jsonBody": {
       "bicycleId": "{{request.pathSegments.[2]}}",
-      "status": "IN_RACK",
-      "location": "Rack-Downtown-A",
+      "status": "{{jsonPath request.body '$.status'}}",
+      "location": "{{jsonPath request.body '$.location'}}",
       "timestamp": "{{now format='yyyy-MM-dd'T'HH:mm:ss'Z'}}"
     },
     "transformers": ["response-template"]
