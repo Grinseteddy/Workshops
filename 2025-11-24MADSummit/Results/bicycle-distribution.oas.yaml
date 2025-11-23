@@ -1,76 +1,59 @@
 openapi: 3.1.0
 info:
   title: Bicycle Distribution API
-  description: API for managing bicycle distribution, rentals, and hotel partnerships for bike-sharing services
+  description: API for distributing bicycles to racks and hotels, including pickup and return operations by mechanics
   version: 1.0.0
   contact:
-    name: Bicycle Distribution Team
-    email: api@bicycledistribution.com
-  x-api-id: 2f8c4a1d-9e6b-4f32-bc21-937d6fae5184
+    name: Annegret
+    email: annegret.junker@gmx.de
+  x-api-id: 7b2c8a1d-5e4f-4a18-bb32-917d9fac5183
   x-audience: external-public
 
 servers:
-  - url: 'https://api.bicycledistribution.com/v1'
-    description: Production server
-  - url: 'https://api-staging.bicycledistribution.com/v1'
-    description: Staging server
+  - url: 'https://rent-a-bike.com/v1'
 
 security:
   - openIdConnect:
       - bicycles:read
       - bicycles:write
-      - rentals:read
-      - rentals:write
 
 tags:
   - name: Bicycles
-    description: Bicycle inventory and management operations
-  - name: Hotels
-    description: Hotel partnership and storage management
-  - name: Racks
-    description: Public bicycle rack and station management
-  - name: Rentals
-    description: Tourist rental and booking operations
-  - name: Subscriptions
-    description: Commuter subscription management
-  - name: Locks
-    description: Lock and unlock operations
-  - name: GPS
-    description: GPS tracking and location services
+    description: Bicycle management and distribution operations
+  - name: Status
+    description: Bicycle status tracking operations
 
 paths:
   /bicycles:
     get:
-      summary: Get list of bicycles
-      description: Retrieves a list of bicycles based on filter criteria
-      operationId: getBicycles
+      description: Returns a list of bicycles fulfilling the search parameters
+      operationId: getBicyclesByFilter
       tags:
         - Bicycles
       security:
         - openIdConnect:
             - bicycles:read
       parameters:
+        - $ref: '#/components/parameters/HotelParameter'
+        - $ref: '#/components/parameters/RackParameter'
+        - $ref: '#/components/parameters/GarageParameter'
+        - $ref: '#/components/parameters/StatusFilterParameter'
         - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/StatusParameter'
-        - $ref: '#/components/parameters/LocationTypeParameter'
-        - $ref: '#/components/parameters/HotelIdParameter'
-        - $ref: '#/components/parameters/RackIdParameter'
-        - $ref: '#/components/parameters/PageParameter'
-        - $ref: '#/components/parameters/PageSizeParameter'
       responses:
         '200':
           $ref: '#/components/responses/BicycleListResponse'
         '400':
           $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
         '500':
-          $ref: '#/components/responses/ServiceNotAvailableResponse'
+          $ref: '#/components/responses/InternalServerErrorResponse'
+        '502':
+          $ref: '#/components/responses/BadGatewayResponse'
         default:
           $ref: '#/components/responses/DefaultResponse'
 
     post:
-      summary: Register a new bicycle
       description: Creates a new bicycle in the distribution system
       operationId: createBicycle
       tags:
@@ -87,623 +70,125 @@ paths:
           $ref: '#/components/responses/BicycleCreatedResponse'
         '400':
           $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
         '500':
-          $ref: '#/components/responses/ServiceNotAvailableResponse'
+          $ref: '#/components/responses/InternalServerErrorResponse'
+        '502':
+          $ref: '#/components/responses/BadGatewayResponse'
         default:
           $ref: '#/components/responses/DefaultResponse'
 
   /bicycles/{bicycleId}:
     get:
-      summary: Get bicycle details
-      description: Retrieves detailed information about a specific bicycle
+      description: Returns a bicycle identified by its ID
       operationId: getBicycleById
-      tags:
-        - Bicycles
       security:
         - openIdConnect:
             - bicycles:read
+      tags:
+        - Bicycles
       parameters:
-        - $ref: '#/components/parameters/VersionParameter'
         - $ref: '#/components/parameters/BicycleIdParameter'
+        - $ref: '#/components/parameters/VersionParameter'
       responses:
         '200':
           $ref: '#/components/responses/BicycleResponse'
         '400':
           $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
         '404':
           $ref: '#/components/responses/NotFoundResponse'
+        '412':
+          $ref: '#/components/responses/PreconditionFailedResponse'
         default:
           $ref: '#/components/responses/DefaultResponse'
 
     put:
-      summary: Update bicycle information
-      description: Updates bicycle details including status and location
+      description: Updates a bicycle with the given bicycle data in the body
       operationId: updateBicycle
-      tags:
-        - Bicycles
       security:
         - openIdConnect:
             - bicycles:write
+      tags:
+        - Bicycles
       parameters:
-        - $ref: '#/components/parameters/VersionParameter'
         - $ref: '#/components/parameters/BicycleIdParameter'
+        - $ref: '#/components/parameters/RackParameter'
+        - $ref: '#/components/parameters/HotelParameter'
+        - $ref: '#/components/parameters/VersionParameter'
       requestBody:
         $ref: '#/components/requestBodies/BicycleUpdateRequest'
       responses:
         '200':
           $ref: '#/components/responses/BicycleResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-    delete:
-      summary: Remove bicycle from system
-      description: Deactivates or removes a bicycle from the distribution system
-      operationId: deleteBicycle
-      tags:
-        - Bicycles
-      security:
-        - openIdConnect:
-            - bicycles:write
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/BicycleIdParameter'
-      responses:
         '204':
-          description: Bicycle successfully deleted
+          $ref: '#/components/responses/NoContentResponse'
         '400':
           $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
+        '412':
+          $ref: '#/components/responses/PreconditionFailedResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerErrorResponse'
+        '502':
+          $ref: '#/components/responses/BadGatewayResponse'
         default:
           $ref: '#/components/responses/DefaultResponse'
 
-  /bicycles/{bicycleId}/location:
+  /bicycles/{bicycleId}/status:
     get:
-      summary: Get bicycle GPS location
-      description: Retrieves the current GPS location and status of a bicycle
-      operationId: getBicycleLocation
-      tags:
-        - Bicycles
-        - GPS
+      description: Returns the current status of a bicycle
+      operationId: getBicycleStatus
       security:
         - openIdConnect:
             - bicycles:read
+      tags:
+        - Status
       parameters:
-        - $ref: '#/components/parameters/VersionParameter'
         - $ref: '#/components/parameters/BicycleIdParameter'
+        - $ref: '#/components/parameters/VersionParameter'
       responses:
         '200':
-          $ref: '#/components/responses/GPSDataResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
+          $ref: '#/components/responses/BicycleStatusResponse'
         '404':
           $ref: '#/components/responses/NotFoundResponse'
+        '414':
+          $ref: '#/components/responses/URITooLongResponse'
         default:
           $ref: '#/components/responses/DefaultResponse'
 
-  /bicycles/{bicycleId}/unlock:
-    post:
-      summary: Unlock a bicycle
-      description: Unlocks a bicycle using a code for rental
-      operationId: unlockBicycle
-      tags:
-        - Bicycles
-        - Locks
+    put:
+      description: Updates the status of a bicycle
+      operationId: updateBicycleStatus
       security:
         - openIdConnect:
             - bicycles:write
+      tags:
+        - Status
       parameters:
-        - $ref: '#/components/parameters/VersionParameter'
         - $ref: '#/components/parameters/BicycleIdParameter'
-      requestBody:
-        $ref: '#/components/requestBodies/UnlockRequest'
-      responses:
-        '200':
-          $ref: '#/components/responses/UnlockResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundResponse'
-        '409':
-          $ref: '#/components/responses/ConflictResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-  /hotels:
-    get:
-      summary: Get list of partner hotels
-      description: Retrieves a list of hotels participating in the bicycle distribution program
-      operationId: getHotels
-      tags:
-        - Hotels
-      security:
-        - openIdConnect:
-            - bicycles:read
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/PageParameter'
-        - $ref: '#/components/parameters/PageSizeParameter'
-      responses:
-        '200':
-          $ref: '#/components/responses/HotelListResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '500':
-          $ref: '#/components/responses/ServiceNotAvailableResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-    post:
-      summary: Register a new partner hotel
-      description: Creates a new hotel partnership in the system
-      operationId: createHotel
-      tags:
-        - Hotels
-      security:
-        - openIdConnect:
-            - bicycles:write
-      parameters:
         - $ref: '#/components/parameters/VersionParameter'
       requestBody:
-        $ref: '#/components/requestBodies/HotelCreateRequest'
+        $ref: '#/components/requestBodies/BicycleStatusUpdateRequest'
       responses:
-        '201':
-          $ref: '#/components/responses/HotelCreatedResponse'
+        '200':
+          $ref: '#/components/responses/BicycleStatusResponse'
         '400':
           $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedResponse'
         '500':
-          $ref: '#/components/responses/ServiceNotAvailableResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-  /hotels/{hotelId}:
-    get:
-      summary: Get hotel details
-      description: Retrieves detailed information about a partner hotel
-      operationId: getHotelById
-      tags:
-        - Hotels
-      security:
-        - openIdConnect:
-            - bicycles:read
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/HotelIdPathParameter'
-      responses:
-        '200':
-          $ref: '#/components/responses/HotelResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-    put:
-      summary: Update hotel information
-      description: Updates hotel partnership details
-      operationId: updateHotel
-      tags:
-        - Hotels
-      security:
-        - openIdConnect:
-            - bicycles:write
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/HotelIdPathParameter'
-      requestBody:
-        $ref: '#/components/requestBodies/HotelUpdateRequest'
-      responses:
-        '200':
-          $ref: '#/components/responses/HotelResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-  /hotels/{hotelId}/bicycles:
-    get:
-      summary: Get bicycles stored at hotel
-      description: Retrieves all bicycles currently stored at a specific hotel
-      operationId: getBicyclesByHotel
-      tags:
-        - Hotels
-        - Bicycles
-      security:
-        - openIdConnect:
-            - bicycles:read
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/HotelIdPathParameter'
-        - $ref: '#/components/parameters/StatusParameter'
-      responses:
-        '200':
-          $ref: '#/components/responses/BicycleListResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-  /racks:
-    get:
-      summary: Get list of bicycle racks
-      description: Retrieves a list of public bicycle racks and stations
-      operationId: getRacks
-      tags:
-        - Racks
-      security:
-        - openIdConnect:
-            - bicycles:read
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/StationIdParameter'
-        - $ref: '#/components/parameters/PageParameter'
-        - $ref: '#/components/parameters/PageSizeParameter'
-      responses:
-        '200':
-          $ref: '#/components/responses/RackListResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '500':
-          $ref: '#/components/responses/ServiceNotAvailableResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-    post:
-      summary: Register a new bicycle rack
-      description: Creates a new bicycle rack in the system
-      operationId: createRack
-      tags:
-        - Racks
-      security:
-        - openIdConnect:
-            - bicycles:write
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-      requestBody:
-        $ref: '#/components/requestBodies/RackCreateRequest'
-      responses:
-        '201':
-          $ref: '#/components/responses/RackCreatedResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '500':
-          $ref: '#/components/responses/ServiceNotAvailableResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-  /racks/{rackId}:
-    get:
-      summary: Get rack details
-      description: Retrieves detailed information about a specific bicycle rack
-      operationId: getRackById
-      tags:
-        - Racks
-      security:
-        - openIdConnect:
-            - bicycles:read
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/RackIdPathParameter'
-      responses:
-        '200':
-          $ref: '#/components/responses/RackResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-  /racks/{rackId}/bicycles:
-    get:
-      summary: Get bicycles at rack
-      description: Retrieves all bicycles currently stored at a specific rack
-      operationId: getBicyclesByRack
-      tags:
-        - Racks
-        - Bicycles
-      security:
-        - openIdConnect:
-            - bicycles:read
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/RackIdPathParameter'
-      responses:
-        '200':
-          $ref: '#/components/responses/BicycleListResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-  /rentals:
-    get:
-      summary: Get list of rentals
-      description: Retrieves a list of tourist rentals based on filter criteria
-      operationId: getRentals
-      tags:
-        - Rentals
-      security:
-        - openIdConnect:
-            - rentals:read
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/TouristIdParameter'
-        - $ref: '#/components/parameters/BicycleIdQueryParameter'
-        - $ref: '#/components/parameters/RentalStatusParameter'
-        - $ref: '#/components/parameters/PageParameter'
-        - $ref: '#/components/parameters/PageSizeParameter'
-      responses:
-        '200':
-          $ref: '#/components/responses/RentalListResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '500':
-          $ref: '#/components/responses/ServiceNotAvailableResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-    post:
-      summary: Create a new rental
-      description: Creates a new bicycle rental for a tourist
-      operationId: createRental
-      tags:
-        - Rentals
-      security:
-        - openIdConnect:
-            - rentals:write
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-      requestBody:
-        $ref: '#/components/requestBodies/RentalCreateRequest'
-      responses:
-        '201':
-          $ref: '#/components/responses/RentalCreatedResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '409':
-          $ref: '#/components/responses/ConflictResponse'
-        '500':
-          $ref: '#/components/responses/ServiceNotAvailableResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-  /rentals/{rentalId}:
-    get:
-      summary: Get rental details
-      description: Retrieves detailed information about a specific rental
-      operationId: getRentalById
-      tags:
-        - Rentals
-      security:
-        - openIdConnect:
-            - rentals:read
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/RentalIdParameter'
-      responses:
-        '200':
-          $ref: '#/components/responses/RentalResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-    put:
-      summary: Update rental
-      description: Updates rental information, typically to end the rental
-      operationId: updateRental
-      tags:
-        - Rentals
-      security:
-        - openIdConnect:
-            - rentals:write
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/RentalIdParameter'
-      requestBody:
-        $ref: '#/components/requestBodies/RentalUpdateRequest'
-      responses:
-        '200':
-          $ref: '#/components/responses/RentalResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-  /subscriptions:
-    get:
-      summary: Get list of subscriptions
-      description: Retrieves a list of commuter subscriptions
-      operationId: getSubscriptions
-      tags:
-        - Subscriptions
-      security:
-        - openIdConnect:
-            - rentals:read
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/CommuterIdParameter'
-        - $ref: '#/components/parameters/SubscriptionStatusParameter'
-        - $ref: '#/components/parameters/PageParameter'
-        - $ref: '#/components/parameters/PageSizeParameter'
-      responses:
-        '200':
-          $ref: '#/components/responses/SubscriptionListResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '500':
-          $ref: '#/components/responses/ServiceNotAvailableResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-    post:
-      summary: Create a new subscription
-      description: Creates a new monthly subscription for a commuter
-      operationId: createSubscription
-      tags:
-        - Subscriptions
-      security:
-        - openIdConnect:
-            - rentals:write
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-      requestBody:
-        $ref: '#/components/requestBodies/SubscriptionCreateRequest'
-      responses:
-        '201':
-          $ref: '#/components/responses/SubscriptionCreatedResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '500':
-          $ref: '#/components/responses/ServiceNotAvailableResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-  /subscriptions/{subscriptionId}:
-    get:
-      summary: Get subscription details
-      description: Retrieves detailed information about a specific subscription
-      operationId: getSubscriptionById
-      tags:
-        - Subscriptions
-      security:
-        - openIdConnect:
-            - rentals:read
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/SubscriptionIdParameter'
-      responses:
-        '200':
-          $ref: '#/components/responses/SubscriptionResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-    put:
-      summary: Update subscription
-      description: Updates subscription information
-      operationId: updateSubscription
-      tags:
-        - Subscriptions
-      security:
-        - openIdConnect:
-            - rentals:write
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/SubscriptionIdParameter'
-      requestBody:
-        $ref: '#/components/requestBodies/SubscriptionUpdateRequest'
-      responses:
-        '200':
-          $ref: '#/components/responses/SubscriptionResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundResponse'
-        default:
-          $ref: '#/components/responses/DefaultResponse'
-
-    delete:
-      summary: Cancel subscription
-      description: Cancels a commuter subscription
-      operationId: deleteSubscription
-      tags:
-        - Subscriptions
-      security:
-        - openIdConnect:
-            - rentals:write
-      parameters:
-        - $ref: '#/components/parameters/VersionParameter'
-        - $ref: '#/components/parameters/SubscriptionIdParameter'
-      responses:
-        '204':
-          description: Subscription successfully cancelled
-        '400':
-          $ref: '#/components/responses/BadRequestResponse'
-        '403':
-          $ref: '#/components/responses/ForbiddenResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundResponse'
+          $ref: '#/components/responses/InternalServerErrorResponse'
+        '502':
+          $ref: '#/components/responses/BadGatewayResponse'
         default:
           $ref: '#/components/responses/DefaultResponse'
 
 components:
   parameters:
-    VersionParameter:
-      description: Version of the expected API specification version by the client
-      name: x-api-version
-      in: header
-      required: true
-      schema:
-        type: string
-        default: "1.0.0"
-        x-extensible-enum: ["1.0.0"]
-
     BicycleIdParameter:
       description: Path parameter to identify a bicycle uniquely
       name: bicycleId
@@ -713,151 +198,54 @@ components:
         type: string
         format: uuid
         examples:
-          - a7f3c921-4d8e-4b12-9f37-6e2c4a8f3d92
+          - a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
 
-    BicycleIdQueryParameter:
-      description: Query parameter to filter by bicycle ID
-      name: bicycleId
+    HotelParameter:
+      description: Parameter to filter bicycles by hotel location
+      name: hotel
       in: query
       schema:
         type: string
-        format: uuid
-
-    HotelIdParameter:
-      description: Query parameter to filter by hotel ID
-      name: hotelId
-      in: query
-      schema:
-        type: string
-        format: uuid
-
-    HotelIdPathParameter:
-      description: Path parameter to identify a hotel uniquely
-      name: hotelId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
         examples:
-          - b8e4d032-5f9a-4c23-8e48-7f3d5b9a4e03
+          - Grand Hotel Munich
+          - City Hotel Berlin
 
-    RackIdParameter:
-      description: Query parameter to filter by rack ID
-      name: rackId
+    RackParameter:
+      description: Parameter to filter bicycles by rack location or assign to a rack
+      name: rack
       in: query
       schema:
         type: string
-        format: uuid
-
-    RackIdPathParameter:
-      description: Path parameter to identify a rack uniquely
-      name: rackId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
         examples:
-          - c9f5e143-6g0b-5d34-9f59-8g4e6c0b5f14
+          - Rack-001
+          - Rack-Downtown-A
 
-    StationIdParameter:
-      description: Query parameter to filter by station ID
-      name: stationId
+    GarageParameter:
+      description: Parameter to filter bicycles by garage location
+      name: garage
       in: query
       schema:
         type: string
-        format: uuid
-
-    TouristIdParameter:
-      description: Query parameter to filter by tourist ID
-      name: touristId
-      in: query
-      schema:
-        type: string
-        format: uuid
-
-    CommuterIdParameter:
-      description: Query parameter to filter by commuter ID
-      name: commuterId
-      in: query
-      schema:
-        type: string
-        format: uuid
-
-    RentalIdParameter:
-      description: Path parameter to identify a rental uniquely
-      name: rentalId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
         examples:
-          - d0g6f254-7h1c-6e45-0g60-9h5f7d1c6g25
+          - Garage-Central
+          - Garage-North
 
-    SubscriptionIdParameter:
-      description: Path parameter to identify a subscription uniquely
-      name: subscriptionId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-        examples:
-          - e1h7g365-8i2d-7f56-1h71-0i6g8e2d7h36
-
-    StatusParameter:
-      description: Parameter to filter bicycles by their status
+    StatusFilterParameter:
+      description: Parameter to filter bicycles by their current status
       name: status
       in: query
       schema:
         $ref: '#/components/schemas/BicycleStatus'
 
-    LocationTypeParameter:
-      description: Parameter to filter bicycles by their location type
-      name: locationType
-      in: query
+    VersionParameter:
+      description: Version of the expected API specification version by the client
+      name: x-api-version
+      in: header
+      required: true
       schema:
         type: string
-        enum:
-          - IN_GARAGE
-          - IN_HOTEL
-          - IN_RACK
-          - IN_RIDING
-
-    RentalStatusParameter:
-      description: Parameter to filter rentals by their status
-      name: status
-      in: query
-      schema:
-        $ref: '#/components/schemas/RentalStatus'
-
-    SubscriptionStatusParameter:
-      description: Parameter to filter subscriptions by their status
-      name: status
-      in: query
-      schema:
-        $ref: '#/components/schemas/SubscriptionStatus'
-
-    PageParameter:
-      description: Page number for pagination
-      name: page
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        default: 1
-
-    PageSizeParameter:
-      description: Number of items per page
-      name: pageSize
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 20
+        default: "1.0.0"
+        x-extensible-enum: ["1.0.0"]
 
   requestBodies:
     BicycleCreateRequest:
@@ -874,71 +262,15 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/BicycleUpdate'
+            $ref: '#/components/schemas/Bicycle'
 
-    HotelCreateRequest:
-      description: Hotel creation request
+    BicycleStatusUpdateRequest:
+      description: Bicycle status update request
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/HotelToBeCreated'
-
-    HotelUpdateRequest:
-      description: Hotel update request
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/HotelUpdate'
-
-    RackCreateRequest:
-      description: Rack creation request
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/RackToBeCreated'
-
-    RentalCreateRequest:
-      description: Rental creation request
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/RentalToBeCreated'
-
-    RentalUpdateRequest:
-      description: Rental update request
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/RentalUpdate'
-
-    SubscriptionCreateRequest:
-      description: Subscription creation request
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/SubscriptionToBeCreated'
-
-    SubscriptionUpdateRequest:
-      description: Subscription update request
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/SubscriptionUpdate'
-
-    UnlockRequest:
-      description: Unlock request with code
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/UnlockCode'
+            $ref: '#/components/schemas/BicycleStatusUpdate'
 
   responses:
     BicycleResponse:
@@ -955,113 +287,38 @@ components:
           schema:
             $ref: '#/components/schemas/BicycleList'
 
+    BicycleStatusResponse:
+      description: Bicycle status response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BicycleStatusInfo'
+
     BicycleCreatedResponse:
       description: Bicycle created successfully
+      headers:
+        Location:
+          description: URI of the newly created bicycle
+          schema:
+            type: string
+            format: uri
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/BicycleLink'
 
-    HotelResponse:
-      description: Single hotel response
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Hotel'
-
-    HotelListResponse:
-      description: List of hotels
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/HotelList'
-
-    HotelCreatedResponse:
-      description: Hotel created successfully
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/HotelLink'
-
-    RackResponse:
-      description: Single rack response
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Rack'
-
-    RackListResponse:
-      description: List of racks
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/RackList'
-
-    RackCreatedResponse:
-      description: Rack created successfully
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/RackLink'
-
-    RentalResponse:
-      description: Single rental response
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Rental'
-
-    RentalListResponse:
-      description: List of rentals
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/RentalList'
-
-    RentalCreatedResponse:
-      description: Rental created successfully
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/RentalLink'
-
-    SubscriptionResponse:
-      description: Single subscription response
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Subscription'
-
-    SubscriptionListResponse:
-      description: List of subscriptions
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/SubscriptionList'
-
-    SubscriptionCreatedResponse:
-      description: Subscription created successfully
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/SubscriptionLink'
-
-    GPSDataResponse:
-      description: GPS location data response
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/GPSData'
-
-    UnlockResponse:
-      description: Unlock operation response
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/UnlockResult'
+    NoContentResponse:
+      description: Operation successful with no content to return
 
     BadRequestResponse:
-      description: Invalid request
+      description: Invalid request parameters or body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    UnauthorizedResponse:
+      description: Authentication required or invalid credentials
       content:
         application/json:
           schema:
@@ -1074,22 +331,29 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
 
-    ForbiddenResponse:
-      description: Access forbidden
+    PreconditionFailedResponse:
+      description: Precondition for the operation was not met
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
 
-    ConflictResponse:
-      description: Resource conflict
+    URITooLongResponse:
+      description: The URI provided was too long to process
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
 
-    ServiceNotAvailableResponse:
-      description: Service unavailable
+    InternalServerErrorResponse:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    BadGatewayResponse:
+      description: Bad gateway or upstream service error
       content:
         application/json:
           schema:
@@ -1103,207 +367,112 @@ components:
             $ref: '#/components/schemas/Error'
 
   schemas:
-    # Bicycle Schemas
     Bicycle:
       description: A bicycle in the distribution system
       type: object
       required:
         - id
-        - serialNumber
-        - model
         - status
-        - createdAt
-      properties:
-        id:
-          description: Unique identifier of the bicycle
-          type: string
-          format: uuid
-          examples:
-            - a7f3c921-4d8e-4b12-9f37-6e2c4a8f3d92
-        serialNumber:
-          description: Manufacturer serial number
-          type: string
-          minLength: 1
-          maxLength: 50
-          examples:
-            - BK-2024-001234
-        model:
-          description: Bicycle model name
-          type: string
-          minLength: 1
-          maxLength: 100
-          examples:
-            - City Cruiser Pro
-        manufacturer:
-          description: Bicycle manufacturer
-          type: string
-          maxLength: 100
-          examples:
-            - BikeWorks International
-        status:
-          $ref: '#/components/schemas/BicycleStatus'
-        currentLocation:
-          $ref: '#/components/schemas/LocationReference'
-        gpsData:
-          $ref: '#/components/schemas/GPSData'
-        maintenanceStatus:
-          description: Current maintenance status
-          type: string
-          enum:
-            - OPERATIONAL
-            - NEEDS_MAINTENANCE
-            - UNDER_MAINTENANCE
-            - OUT_OF_SERVICE
-          examples:
-            - OPERATIONAL
-        lastMaintenanceDate:
-          description: Date of last maintenance
-          type: string
-          format: date
-          examples:
-            - "2024-11-15"
-        createdAt:
-          description: Date and time when the bicycle was registered
-          type: string
-          format: date-time
-          examples:
-            - "2024-11-01T10:30:00Z"
-        updatedAt:
-          description: Date and time when bicycle was last updated
-          type: string
-          format: date-time
-          examples:
-            - "2024-11-23T14:45:00Z"
-
-    BicycleToBeCreated:
-      description: Bicycle to be created in the system
-      type: object
-      required:
-        - serialNumber
         - model
-      properties:
-        serialNumber:
-          description: Manufacturer serial number
-          type: string
-          minLength: 1
-          maxLength: 50
-          examples:
-            - BK-2024-001234
-        model:
-          description: Bicycle model name
-          type: string
-          minLength: 1
-          maxLength: 100
-          examples:
-            - City Cruiser Pro
-        manufacturer:
-          description: Bicycle manufacturer
-          type: string
-          maxLength: 100
-          examples:
-            - BikeWorks International
-        initialLocation:
-          $ref: '#/components/schemas/LocationReference'
-
-    BicycleUpdate:
-      description: Bicycle update information
-      type: object
-      properties:
-        status:
-          $ref: '#/components/schemas/BicycleStatus'
-        currentLocation:
-          $ref: '#/components/schemas/LocationReference'
-        maintenanceStatus:
-          type: string
-          enum:
-            - OPERATIONAL
-            - NEEDS_MAINTENANCE
-            - UNDER_MAINTENANCE
-            - OUT_OF_SERVICE
+        - serialNumber
+      allOf:
+        - $ref: '#/components/schemas/BicycleToBeCreated'
+        - properties:
+            id:
+              description: Unique identifier of the bicycle
+              type: string
+              format: uuid
+              examples:
+                - a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+            status:
+              $ref: '#/components/schemas/BicycleStatus'
+            gpsData:
+              $ref: '#/components/schemas/GPSData'
+            currentLocation:
+              description: Current location of the bicycle
+              type: string
+              examples:
+                - Grand Hotel Munich
+                - Rack-Downtown-A
+                - Garage-Central
+            assignedMechanic:
+              description: Identifier of the mechanic currently assigned to the bicycle
+              type: string
+              format: uuid
+              examples:
+                - 9f8e7d6c-5b4a-3c2d-1e0f-9a8b7c6d5e4f
+            createdAt:
+              description: Date and time when the bicycle was registered
+              type: string
+              format: date-time
+              examples:
+                - 2025-10-06T13:24:00Z
+            updatedAt:
+              description: Date and time when bicycle was last updated
+              type: string
+              format: date-time
+              examples:
+                - 2025-10-06T15:30:00Z
 
     BicycleStatus:
-      description: Current status of a bicycle
+      description: Current status of a bicycle in the distribution system
       type: string
       x-extensible-enum:
-        - AVAILABLE
-        - IN_USE
-        - RESERVED
-        - MAINTENANCE
-        - DECOMMISSIONED
-      default: AVAILABLE
+        - IN_GARAGE
+        - IN_HOTEL
+        - IN_RACK
+        - IN_RIDING
+      default: IN_GARAGE
       examples:
-        - AVAILABLE
+        - IN_RACK
 
-    BicycleList:
-      description: List of bicycles as response object
+    BicycleToBeCreated:
+      description: Bicycle data for creation in the distribution system
       type: object
       required:
-        - bicycles
-        - pagination
+        - model
+        - serialNumber
       properties:
-        bicycles:
-          description: Array of bicycles
-          type: array
-          items:
-            $ref: '#/components/schemas/Bicycle'
-        pagination:
-          $ref: '#/components/schemas/Pagination'
-
-    BicycleLink:
-      description: Link to a bicycle resource
-      type: object
-      required:
-        - bicycleLink
-        - bicycleId
-      properties:
-        bicycleLink:
-          description: URI link to the bicycle resource
+        model:
+          description: Model name or type of the bicycle
           type: string
-          format: uri
+          minLength: 1
+          maxLength: 100
           examples:
-            - https://api.bicycledistribution.com/v1/bicycles/a7f3c921-4d8e-4b12-9f37-6e2c4a8f3d92
-        bicycleId:
-          description: ID of the created bicycle
+            - City Bike Pro 2025
+            - Mountain Explorer X1
+        serialNumber:
+          description: Unique serial number of the bicycle
           type: string
-          format: uuid
+          minLength: 1
+          maxLength: 50
+          pattern: '^[A-Z0-9-]+$'
           examples:
-            - a7f3c921-4d8e-4b12-9f37-6e2c4a8f3d92
-
-    # Location and GPS Schemas
-    LocationReference:
-      description: Reference to a location where bicycle is stored
-      type: object
-      required:
-        - locationType
-      properties:
-        locationType:
-          description: Type of location
+            - BIKE-2025-001234
+            - MTB-X1-987654
+        description:
+          description: Additional description of the bicycle
           type: string
-          enum:
-            - GARAGE
-            - HOTEL
-            - RACK
-            - IN_TRANSIT
+          maxLength: 500
           examples:
-            - RACK
-        locationId:
-          description: ID of the specific location (hotelId, rackId, etc.)
+            - Blue city bike with basket and lights
+        initialLocation:
+          description: Initial location where the bicycle is registered
           type: string
-          format: uuid
+          maxLength: 200
           examples:
-            - c9f5e143-6g0b-5d34-9f59-8g4e6c0b5f14
+            - Garage-Central
+            - Main Warehouse
 
     GPSData:
-      description: GPS location and tracking data for a bicycle
+      description: GPS location data for a bicycle
       type: object
       required:
         - latitude
         - longitude
-        - timestamp
-        - locationStatus
       properties:
         latitude:
-          description: GPS latitude coordinate
+          description: Latitude coordinate
           type: number
           format: double
           minimum: -90
@@ -1311,7 +480,7 @@ components:
           examples:
             - 48.1351
         longitude:
-          description: GPS longitude coordinate
+          description: Longitude coordinate
           type: number
           format: double
           minimum: -180
@@ -1319,7 +488,7 @@ components:
           examples:
             - 11.5820
         altitude:
-          description: Altitude in meters (optional)
+          description: Altitude in meters above sea level
           type: number
           format: double
           examples:
@@ -1328,926 +497,111 @@ components:
           description: GPS accuracy in meters
           type: number
           format: double
+          minimum: 0
           examples:
             - 5.2
-        speed:
-          description: Current speed in km/h (if moving)
-          type: number
-          format: double
-          examples:
-            - 15.3
-        heading:
-          description: Direction of travel in degrees (0-360)
-          type: number
-          format: double
-          minimum: 0
-          maximum: 360
-          examples:
-            - 245.5
-        locationStatus:
-          description: Current location status based on GPS
-          type: string
-          enum:
-            - IN_GARAGE
-            - IN_HOTEL
-            - IN_RACK
-            - IN_RIDING
-          examples:
-            - IN_RACK
         timestamp:
-          description: Timestamp of GPS reading
+          description: Timestamp of the GPS reading
           type: string
           format: date-time
           examples:
-            - "2024-11-23T14:45:32Z"
+            - 2025-10-06T15:30:00Z
 
-    # Hotel Schemas
-    Hotel:
-      description: A partner hotel in the bicycle distribution system
+    BicycleStatusUpdate:
+      description: Update request for bicycle status
       type: object
       required:
-        - id
-        - name
-        - address
-        - capacity
-        - createdAt
-      properties:
-        id:
-          description: Unique identifier of the hotel
-          type: string
-          format: uuid
-          examples:
-            - b8e4d032-5f9a-4c23-8e48-7f3d5b9a4e03
-        name:
-          description: Name of the hotel
-          type: string
-          minLength: 1
-          maxLength: 200
-          examples:
-            - Grand Hotel München
-        address:
-          $ref: '#/components/schemas/Address'
-        contactEmail:
-          description: Contact email for the hotel
-          type: string
-          format: email
-          examples:
-            - contact@grandhotel-munich.com
-        contactPhone:
-          description: Contact phone number
-          type: string
-          maxLength: 50
-          examples:
-            - +49 89 1234567
-        capacity:
-          description: Maximum number of bicycles that can be stored
-          type: integer
-          minimum: 0
-          examples:
-            - 20
-        currentOccupancy:
-          description: Current number of bicycles stored
-          type: integer
-          minimum: 0
-          examples:
-            - 12
-        partnershipStartDate:
-          description: Date when partnership began
-          type: string
-          format: date
-          examples:
-            - "2024-01-15"
-        feeStructure:
-          $ref: '#/components/schemas/FeeStructure'
-        createdAt:
-          description: Date and time when hotel was registered
-          type: string
-          format: date-time
-          examples:
-            - "2024-01-15T09:00:00Z"
-        updatedAt:
-          description: Date and time when hotel was last updated
-          type: string
-          format: date-time
-          examples:
-            - "2024-11-20T16:30:00Z"
-
-    HotelToBeCreated:
-      description: Hotel to be created in the system
-      type: object
-      required:
-        - name
-        - address
-        - capacity
-      properties:
-        name:
-          description: Name of the hotel
-          type: string
-          minLength: 1
-          maxLength: 200
-          examples:
-            - Grand Hotel München
-        address:
-          $ref: '#/components/schemas/Address'
-        contactEmail:
-          description: Contact email for the hotel
-          type: string
-          format: email
-          examples:
-            - contact@grandhotel-munich.com
-        contactPhone:
-          description: Contact phone number
-          type: string
-          maxLength: 50
-          examples:
-            - +49 89 1234567
-        capacity:
-          description: Maximum number of bicycles that can be stored
-          type: integer
-          minimum: 0
-          examples:
-            - 20
-        partnershipStartDate:
-          description: Date when partnership begins
-          type: string
-          format: date
-          examples:
-            - "2024-01-15"
-        feeStructure:
-          $ref: '#/components/schemas/FeeStructure'
-
-    HotelUpdate:
-      description: Hotel update information
-      type: object
-      properties:
-        name:
-          description: Name of the hotel
-          type: string
-          minLength: 1
-          maxLength: 200
-        contactEmail:
-          description: Contact email for the hotel
-          type: string
-          format: email
-        contactPhone:
-          description: Contact phone number
-          type: string
-          maxLength: 50
-        capacity:
-          description: Maximum number of bicycles that can be stored
-          type: integer
-          minimum: 0
-        feeStructure:
-          $ref: '#/components/schemas/FeeStructure'
-
-    HotelList:
-      description: List of hotels as response object
-      type: object
-      required:
-        - hotels
-        - pagination
-      properties:
-        hotels:
-          description: Array of hotels
-          type: array
-          items:
-            $ref: '#/components/schemas/Hotel'
-        pagination:
-          $ref: '#/components/schemas/Pagination'
-
-    HotelLink:
-      description: Link to a hotel resource
-      type: object
-      required:
-        - hotelLink
-        - hotelId
-      properties:
-        hotelLink:
-          description: URI link to the hotel resource
-          type: string
-          format: uri
-          examples:
-            - https://api.bicycledistribution.com/v1/hotels/b8e4d032-5f9a-4c23-8e48-7f3d5b9a4e03
-        hotelId:
-          description: ID of the created hotel
-          type: string
-          format: uuid
-          examples:
-            - b8e4d032-5f9a-4c23-8e48-7f3d5b9a4e03
-
-    FeeStructure:
-      description: Fee structure for hotel bicycle storage
-      type: object
-      properties:
-        storageFeePer Day:
-          description: Fee charged per bicycle per day in EUR
-          type: number
-          format: double
-          minimum: 0
-          examples:
-            - 2.50
-        minimumFee:
-          description: Minimum monthly fee in EUR
-          type: number
-          format: double
-          minimum: 0
-          examples:
-            - 50.00
-        currency:
-          description: Currency for fees
-          type: string
-          default: EUR
-          examples:
-            - EUR
-
-    # Rack Schemas
-    Rack:
-      description: A public bicycle rack or station
-      type: object
-      required:
-        - id
-        - name
-        - address
-        - capacity
-        - stationId
-        - createdAt
-      properties:
-        id:
-          description: Unique identifier of the rack
-          type: string
-          format: uuid
-          examples:
-            - c9f5e143-6g0b-5d34-9f59-8g4e6c0b5f14
-        name:
-          description: Name of the rack location
-          type: string
-          minLength: 1
-          maxLength: 200
-          examples:
-            - München Hauptbahnhof - North Exit
-        address:
-          $ref: '#/components/schemas/Address'
-        stationId:
-          description: ID of the public transport station
-          type: string
-          format: uuid
-          examples:
-            - e1h7g365-8i2d-7f56-1h71-0i6g8e2d7h36
-        stationName:
-          description: Name of the public transport station
-          type: string
-          maxLength: 200
-          examples:
-            - München Hauptbahnhof
-        capacity:
-          description: Maximum number of bicycles that can be stored
-          type: integer
-          minimum: 0
-          examples:
-            - 30
-        currentOccupancy:
-          description: Current number of bicycles at rack
-          type: integer
-          minimum: 0
-          examples:
-            - 18
-        lockCount:
-          description: Number of locks available at this rack
-          type: integer
-          minimum: 0
-          examples:
-            - 30
-        operationalStatus:
-          description: Current operational status of the rack
-          type: string
-          enum:
-            - OPERATIONAL
-            - MAINTENANCE
-            - OUT_OF_SERVICE
-          examples:
-            - OPERATIONAL
-        gpsCoordinates:
-          $ref: '#/components/schemas/Coordinates'
-        createdAt:
-          description: Date and time when rack was registered
-          type: string
-          format: date-time
-          examples:
-            - "2024-03-01T08:00:00Z"
-        updatedAt:
-          description: Date and time when rack was last updated
-          type: string
-          format: date-time
-          examples:
-            - "2024-11-22T11:20:00Z"
-
-    RackToBeCreated:
-      description: Rack to be created in the system
-      type: object
-      required:
-        - name
-        - address
-        - capacity
-        - stationId
-        - lockCount
-      properties:
-        name:
-          description: Name of the rack location
-          type: string
-          minLength: 1
-          maxLength: 200
-          examples:
-            - München Hauptbahnhof - North Exit
-        address:
-          $ref: '#/components/schemas/Address'
-        stationId:
-          description: ID of the public transport station
-          type: string
-          format: uuid
-          examples:
-            - e1h7g365-8i2d-7f56-1h71-0i6g8e2d7h36
-        stationName:
-          description: Name of the public transport station
-          type: string
-          maxLength: 200
-          examples:
-            - München Hauptbahnhof
-        capacity:
-          description: Maximum number of bicycles that can be stored
-          type: integer
-          minimum: 0
-          examples:
-            - 30
-        lockCount:
-          description: Number of locks available at this rack
-          type: integer
-          minimum: 0
-          examples:
-            - 30
-        gpsCoordinates:
-          $ref: '#/components/schemas/Coordinates'
-
-    RackList:
-      description: List of racks as response object
-      type: object
-      required:
-        - racks
-        - pagination
-      properties:
-        racks:
-          description: Array of racks
-          type: array
-          items:
-            $ref: '#/components/schemas/Rack'
-        pagination:
-          $ref: '#/components/schemas/Pagination'
-
-    RackLink:
-      description: Link to a rack resource
-      type: object
-      required:
-        - rackLink
-        - rackId
-      properties:
-        rackLink:
-          description: URI link to the rack resource
-          type: string
-          format: uri
-          examples:
-            - https://api.bicycledistribution.com/v1/racks/c9f5e143-6g0b-5d34-9f59-8g4e6c0b5f14
-        rackId:
-          description: ID of the created rack
-          type: string
-          format: uuid
-          examples:
-            - c9f5e143-6g0b-5d34-9f59-8g4e6c0b5f14
-
-    # Rental Schemas
-    Rental:
-      description: A bicycle rental by a tourist
-      type: object
-      required:
-        - id
-        - touristId
-        - bicycleId
-        - startTime
         - status
-        - createdAt
       properties:
-        id:
-          description: Unique identifier of the rental
-          type: string
-          format: uuid
-          examples:
-            - d0g6f254-7h1c-6e45-0g60-9h5f7d1c6g25
-        touristId:
-          description: ID of the tourist renting the bicycle
-          type: string
-          format: uuid
-          examples:
-            - f2i8h476-9j3e-8g67-2i82-1j7i9f3e8i47
-        bicycleId:
-          description: ID of the rented bicycle
-          type: string
-          format: uuid
-          examples:
-            - a7f3c921-4d8e-4b12-9f37-6e2c4a8f3d92
-        unlockCode:
-          description: Code used to unlock the bicycle
-          type: string
-          examples:
-            - "4829"
-        startTime:
-          description: Start time of the rental
-          type: string
-          format: date-time
-          examples:
-            - "2024-11-23T10:00:00Z"
-        endTime:
-          description: End time of the rental
-          type: string
-          format: date-time
-          examples:
-            - "2024-11-23T14:30:00Z"
-        startLocation:
-          $ref: '#/components/schemas/LocationReference'
-        endLocation:
-          $ref: '#/components/schemas/LocationReference'
         status:
-          $ref: '#/components/schemas/RentalStatus'
-        fee:
-          $ref: '#/components/schemas/RentalFee'
-        createdAt:
-          description: Date and time when rental was created
-          type: string
-          format: date-time
-          examples:
-            - "2024-11-23T10:00:00Z"
-        updatedAt:
-          description: Date and time when rental was last updated
-          type: string
-          format: date-time
-          examples:
-            - "2024-11-23T14:30:00Z"
-
-    RentalToBeCreated:
-      description: Rental to be created in the system
-      type: object
-      required:
-        - touristId
-        - bicycleId
-      properties:
-        touristId:
-          description: ID of the tourist renting the bicycle
-          type: string
-          format: uuid
-          examples:
-            - f2i8h476-9j3e-8g67-2i82-1j7i9f3e8i47
-        bicycleId:
-          description: ID of the bicycle to rent
-          type: string
-          format: uuid
-          examples:
-            - a7f3c921-4d8e-4b12-9f37-6e2c4a8f3d92
-        startLocation:
-          $ref: '#/components/schemas/LocationReference'
-
-    RentalUpdate:
-      description: Rental update information
-      type: object
-      properties:
-        endTime:
-          description: End time of the rental
-          type: string
-          format: date-time
-          examples:
-            - "2024-11-23T14:30:00Z"
-        endLocation:
-          $ref: '#/components/schemas/LocationReference'
-        status:
-          $ref: '#/components/schemas/RentalStatus'
-
-    RentalStatus:
-      description: Status of a rental
-      type: string
-      x-extensible-enum:
-        - ACTIVE
-        - COMPLETED
-        - CANCELLED
-      examples:
-        - ACTIVE
-
-    RentalFee:
-      description: Fee calculation for a rental
-      type: object
-      required:
-        - amount
-        - currency
-      properties:
-        amount:
-          description: Total fee amount
-          type: number
-          format: double
-          minimum: 0
-          examples:
-            - 12.50
-        currency:
-          description: Currency of the fee
-          type: string
-          default: EUR
-          examples:
-            - EUR
-        hourlyRate:
-          description: Hourly rate applied
-          type: number
-          format: double
-          examples:
-            - 3.00
-        duration:
-          description: Duration in hours
-          type: number
-          format: double
-          examples:
-            - 4.5
-
-    RentalList:
-      description: List of rentals as response object
-      type: object
-      required:
-        - rentals
-        - pagination
-      properties:
-        rentals:
-          description: Array of rentals
-          type: array
-          items:
-            $ref: '#/components/schemas/Rental'
-        pagination:
-          $ref: '#/components/schemas/Pagination'
-
-    RentalLink:
-      description: Link to a rental resource
-      type: object
-      required:
-        - rentalLink
-        - rentalId
-      properties:
-        rentalLink:
-          description: URI link to the rental resource
-          type: string
-          format: uri
-          examples:
-            - https://api.bicycledistribution.com/v1/rentals/d0g6f254-7h1c-6e45-0g60-9h5f7d1c6g25
-        rentalId:
-          description: ID of the created rental
-          type: string
-          format: uuid
-          examples:
-            - d0g6f254-7h1c-6e45-0g60-9h5f7d1c6g25
-
-    # Subscription Schemas
-    Subscription:
-      description: A monthly subscription for a commuter
-      type: object
-      required:
-        - id
-        - commuterId
-        - startDate
-        - status
-        - monthlyFee
-        - createdAt
-      properties:
-        id:
-          description: Unique identifier of the subscription
-          type: string
-          format: uuid
-          examples:
-            - e1h7g365-8i2d-7f56-1h71-0i6g8e2d7h36
-        commuterId:
-          description: ID of the commuter
-          type: string
-          format: uuid
-          examples:
-            - g3j9i587-0k4f-9h78-3j93-2k8j0g4f9j58
-        startDate:
-          description: Start date of the subscription
-          type: string
-          format: date
-          examples:
-            - "2024-11-01"
-        endDate:
-          description: End date of the subscription (if cancelled)
-          type: string
-          format: date
-          examples:
-            - "2025-10-31"
-        status:
-          $ref: '#/components/schemas/SubscriptionStatus'
-        monthlyFee:
-          $ref: '#/components/schemas/MonthlyFee'
-        accessCodes:
-          description: Array of access codes for the commuter
-          type: array
-          items:
-            type: string
-          examples:
-            - ["7234", "8456", "9123"]
-        createdAt:
-          description: Date and time when subscription was created
-          type: string
-          format: date-time
-          examples:
-            - "2024-11-01T00:00:00Z"
-        updatedAt:
-          description: Date and time when subscription was last updated
-          type: string
-          format: date-time
-          examples:
-            - "2024-11-20T15:45:00Z"
-
-    SubscriptionToBeCreated:
-      description: Subscription to be created in the system
-      type: object
-      required:
-        - commuterId
-        - startDate
-      properties:
-        commuterId:
-          description: ID of the commuter
-          type: string
-          format: uuid
-          examples:
-            - g3j9i587-0k4f-9h78-3j93-2k8j0g4f9j58
-        startDate:
-          description: Start date of the subscription
-          type: string
-          format: date
-          examples:
-            - "2024-11-01"
-
-    SubscriptionUpdate:
-      description: Subscription update information
-      type: object
-      properties:
-        endDate:
-          description: End date of the subscription
-          type: string
-          format: date
-        status:
-          $ref: '#/components/schemas/SubscriptionStatus'
-
-    SubscriptionStatus:
-      description: Status of a subscription
-      type: string
-      x-extensible-enum:
-        - ACTIVE
-        - SUSPENDED
-        - CANCELLED
-        - EXPIRED
-      examples:
-        - ACTIVE
-
-    MonthlyFee:
-      description: Monthly subscription fee details
-      type: object
-      required:
-        - amount
-        - currency
-      properties:
-        amount:
-          description: Monthly fee amount
-          type: number
-          format: double
-          minimum: 0
-          examples:
-            - 29.90
-        currency:
-          description: Currency of the fee
-          type: string
-          default: EUR
-          examples:
-            - EUR
-        billingDay:
-          description: Day of month for billing
-          type: integer
-          minimum: 1
-          maximum: 31
-          examples:
-            - 1
-        nextBillingDate:
-          description: Next billing date
-          type: string
-          format: date
-          examples:
-            - "2024-12-01"
-
-    SubscriptionList:
-      description: List of subscriptions as response object
-      type: object
-      required:
-        - subscriptions
-        - pagination
-      properties:
-        subscriptions:
-          description: Array of subscriptions
-          type: array
-          items:
-            $ref: '#/components/schemas/Subscription'
-        pagination:
-          $ref: '#/components/schemas/Pagination'
-
-    SubscriptionLink:
-      description: Link to a subscription resource
-      type: object
-      required:
-        - subscriptionLink
-        - subscriptionId
-      properties:
-        subscriptionLink:
-          description: URI link to the subscription resource
-          type: string
-          format: uri
-          examples:
-            - https://api.bicycledistribution.com/v1/subscriptions/e1h7g365-8i2d-7f56-1h71-0i6g8e2d7h36
-        subscriptionId:
-          description: ID of the created subscription
-          type: string
-          format: uuid
-          examples:
-            - e1h7g365-8i2d-7f56-1h71-0i6g8e2d7h36
-
-    # Lock/Unlock Schemas
-    UnlockCode:
-      description: Code to unlock a bicycle
-      type: object
-      required:
-        - code
-        - userId
-      properties:
-        code:
-          description: Unlock code (4-digit PIN)
-          type: string
-          pattern: '^\d{4}$'
-          examples:
-            - "4829"
-        userId:
-          description: ID of the user (tourist or commuter)
-          type: string
-          format: uuid
-          examples:
-            - f2i8h476-9j3e-8g67-2i82-1j7i9f3e8i47
-        userType:
-          description: Type of user
-          type: string
-          enum:
-            - TOURIST
-            - COMMUTER
-          examples:
-            - TOURIST
-
-    UnlockResult:
-      description: Result of unlock operation
-      type: object
-      required:
-        - success
-        - message
-        - bicycleId
-      properties:
-        success:
-          description: Whether unlock was successful
-          type: boolean
-          examples:
-            - true
-        message:
-          description: Result message
-          type: string
-          examples:
-            - Bicycle unlocked successfully
-        bicycleId:
-          description: ID of the unlocked bicycle
-          type: string
-          format: uuid
-          examples:
-            - a7f3c921-4d8e-4b12-9f37-6e2c4a8f3d92
-        unlockTime:
-          description: Time when bicycle was unlocked
-          type: string
-          format: date-time
-          examples:
-            - "2024-11-23T10:00:00Z"
-        rentalId:
-          description: ID of the rental created (for tourists)
-          type: string
-          format: uuid
-          examples:
-            - d0g6f254-7h1c-6e45-0g60-9h5f7d1c6g25
-
-    # Common Schemas
-    Address:
-      description: Physical address
-      type: object
-      required:
-        - street
-        - city
-        - postalCode
-        - country
-      properties:
-        street:
-          description: Street address
+          $ref: '#/components/schemas/BicycleStatus'
+        location:
+          description: Location associated with the status change
           type: string
           maxLength: 200
           examples:
-            - Maximilianstraße 42
-        city:
-          description: City
+            - Grand Hotel Munich
+            - Rack-Downtown-A
+        notes:
+          description: Additional notes about the status change
           type: string
-          maxLength: 100
+          maxLength: 500
           examples:
-            - München
-        state:
-          description: State or region
-          type: string
-          maxLength: 100
-          examples:
-            - Bavaria
-        postalCode:
-          description: Postal code
-          type: string
-          maxLength: 20
-          examples:
-            - "80539"
-        country:
-          description: Country (ISO 3166-1 alpha-2 code)
-          type: string
-          minLength: 2
-          maxLength: 2
-          examples:
-            - DE
+            - Bicycle picked up by mechanic for maintenance
 
-    Coordinates:
-      description: GPS coordinates
+    BicycleStatusInfo:
+      description: Detailed status information for a bicycle
       type: object
       required:
-        - latitude
-        - longitude
+        - bicycleId
+        - status
+        - timestamp
       properties:
-        latitude:
-          description: Latitude
-          type: number
-          format: double
-          minimum: -90
-          maximum: 90
+        bicycleId:
+          description: Identifier of the bicycle
+          type: string
+          format: uuid
           examples:
-            - 48.1351
-        longitude:
-          description: Longitude
-          type: number
-          format: double
-          minimum: -180
-          maximum: 180
+            - a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+        status:
+          $ref: '#/components/schemas/BicycleStatus'
+        location:
+          description: Current location of the bicycle
+          type: string
           examples:
-            - 11.5820
+            - Grand Hotel Munich
+        timestamp:
+          description: Timestamp of the status
+          type: string
+          format: date-time
+          examples:
+            - 2025-10-06T15:30:00Z
 
-    Pagination:
-      description: Pagination information
+    BicycleList:
+      description: List of bicycles as response object
       type: object
       required:
-        - page
-        - pageSize
-        - totalItems
-        - totalPages
+        - bicycles
       properties:
-        page:
-          description: Current page number
-          type: integer
-          minimum: 1
-          examples:
-            - 1
-        pageSize:
-          description: Number of items per page
-          type: integer
-          minimum: 1
-          examples:
-            - 20
-        totalItems:
-          description: Total number of items
+        bicycles:
+          description: Array of bicycles
+          type: array
+          minItems: 0
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/Bicycle'
+        totalCount:
+          description: Total number of bicycles matching the filter
           type: integer
           minimum: 0
           examples:
-            - 156
-        totalPages:
-          description: Total number of pages
-          type: integer
-          minimum: 0
+            - 42
+
+    BicycleLink:
+      description: Link to a bicycle resource
+      type: object
+      required:
+        - bicycleLink
+      properties:
+        bicycleLink:
+          description: URI link to the bicycle in the distribution system
+          type: string
+          format: uri
           examples:
-            - 8
+            - https://rent-a-bike.com/v1/bicycles/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+        bicycleId:
+          description: Identifier of the created bicycle
+          type: string
+          format: uuid
+          examples:
+            - a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
 
     Error:
       description: Standard error object
       type: object
       required:
         - code
-        - title
+        - message
       properties:
         code:
           description: Short error code for easy identification
@@ -2255,26 +609,21 @@ components:
           minLength: 2
           maxLength: 20
           examples:
-            - BICYCLE-001
-        title:
+            - BIKE-001
+            - BIKE-404
+        message:
           description: Human-readable error message
           type: string
           minLength: 2
           maxLength: 256
           examples:
-            - Bicycle not found
+            - Bicycle with ID a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d cannot be found
         detail:
-          description: Detailed error description
-          type: string
-          maxLength: 1000
-          examples:
-            - The bicycle with ID a7f3c921-4d8e-4b12-9f37-6e2c4a8f3d92 could not be found in the system.
-        instance:
-          description: URI reference to the specific instance of the problem
+          description: URI link to the resource related to the error
           type: string
           format: uri
           examples:
-            - https://api.bicycledistribution.com/v1/bicycles/a7f3c921-4d8e-4b12-9f37-6e2c4a8f3d92
+            - https://rent-a-bike.com/v1/bicycles/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
         severity:
           description: Severity level of the error
           type: string
@@ -2291,11 +640,10 @@ components:
           type: string
           format: date-time
           examples:
-            - "2024-11-23T14:45:32Z"
+            - 2025-10-06T15:30:00Z
 
   securitySchemes:
     openIdConnect:
-      description: Access to Bicycle Distribution API via OpenID Connect
+      description: Access to bicycle distribution system via OpenID Connect
       type: openIdConnect
-      openIdConnectUrl: https://auth.bicycledistribution.com/.well-known/openid-configuration1qaa^^
-  
+      openIdConnectUrl: https://auth.rent-a-bike.com/.well-known/openid-configuration
